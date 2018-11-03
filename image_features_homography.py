@@ -44,23 +44,18 @@ for i,(m,n) in enumerate(matches):
     if m.distance < 0.75*n.distance:
         ratioTestM.append([m])
         
-img3 = cv2.drawMatchesKnn(img1_g.copy(),keypoints_img1knn,img2_g.copy(),keypoints_img2knn,ratioTestM,None,flags =2)
+img3 = cv2.drawMatchesKnn(img1_g.copy(),keypoints_img1knn.copy(),img2_g.copy(),keypoints_img2knn.copy(),ratioTestM,None,flags =2)
 
 cv2.imwrite('1/task1_matches_knn.jpg',img3)
 
 
 # Part 3
 ratioTestM = np.array(ratioTestM)
-src_pts = np.float32([keypoints_img1knn[m.queryIdx].pt for m in ratioTestM.flatten()]).reshape(-1,1,2)
-dst_pts = np.float32([keypoints_img2knn[m.trainIdx].pt for m in ratioTestM.flatten()]).reshape(-1,1,2)
+src_pts = np.float32([keypoints_img1knn[m.queryIdx].pt for m in ratioTestM.flatten()])
+dst_pts = np.float32([keypoints_img2knn[m.trainIdx].pt for m in ratioTestM.flatten()])
 
-M, mask = cv2.findHomography(dst_pts,src_pts, cv2.RANSAC,5)
+M, mask = cv2.findHomography(src_pts,dst_pts, cv2.RANSAC,1)
 matchesMask = mask.ravel().tolist()
-
-draw_params = dict(matchColor = (0,255,0), # draw matches in green color
-                   singlePointColor = None,
-                   matchesMask = matchesMask, # draw only inliers
-                   flags = 2)
 
 # Random Sampling 10 points
 rand10matchesMask = []
@@ -71,27 +66,32 @@ for i in range(0,len(matchesMask)):
 rand10Places = np.random.choice(inlier_idx,10,replace=False)
 for i in range(0,len(matchesMask)):
     if((i == rand10Places).any()):
-        print(i)
         rand10matchesMask.append(1)
     else:
         rand10matchesMask.append(0)
 
-
-draw_params = dict(matchColor = (0,255,0), # draw matches in green color
+draw_params = dict(matchColor = (0,255,0),
                    singlePointColor = None,
-                   matchesMask = rand10matchesMask, # draw only inliers
+                   matchesMask = rand10matchesMask,
                    flags = 2)
 
 img4 = cv2.drawMatches(img1_g.copy(),keypoints_img1knn,img2_g.copy(),keypoints_img2knn,ratioTestM.flatten(),None,**draw_params)
 cv2.imwrite('1/task1_matches.jpg',img4)
 
-# Wraping
-translate = [[1,0,500],
-             [0,1,700],
-             [0,0,1]]
-translate = np.matrix(translate)
-nM = np.matmul(M,translate)
-h,w = np.shape(img2_g)
-warpImg = cv2.warpPerspective(img2_g.copy(),M,(w*22,h*22))
+# The Homography matrix has some points ofset so need to change that
+# https://stackoverflow.com/questions/22220253/cvwarpperspective-only-shows-part-of-warped-image
+# Therefore finding real corners after warping
+h,w = np.shape(img1_g)
+P = [[0,w,w,0],
+     [0,0,h,h],
+     [1,1,1,1]]
+P = np.matmul(M,P)
+P[0] = np.divide(P[0],P[2])
+P[1] = np.divide(P[1],P[2])
+M2 = M.copy()
+M2[0][2] = M[0][2] - min(P[0])
+M2[1][2] = M[1][2] - min(P[1])
+warpImg = cv2.warpPerspective(img1_g.copy(),M2,(w*2,h*2))
+# test[h:h*2,w:w*2]=img2_g.copy()
 #warpImg[0:h,0:w]=img2_g.copy()
 cv2.imwrite("1/task1_pano.jpg", warpImg)
