@@ -5,7 +5,7 @@ np.random.seed(sum([ord(c) for c in UBIT]))
 import cv2 as cv2
 import numpy as np
 from matplotlib import pyplot as plt
-from functions import drawlines
+from functions import drawlines,normImage
 
 img_left = cv2.imread("./data/tsucuba_left.png")
 img_left_g = cv2.cvtColor(img_left.copy(),cv2.COLOR_BGR2GRAY)
@@ -47,7 +47,7 @@ ratioTestM = np.array(ratioTestM)
 left_pts = np.float32([keypoints_img_leftknn[m.queryIdx].pt for m in ratioTestM.flatten()])
 right_pts = np.float32([keypoints_img_rightknn[m.trainIdx].pt for m in ratioTestM.flatten()])
 
-F, mask = cv2.findFundamentalMat(left_pts,right_pts,cv2.RANSAC,5)
+F, mask = cv2.findFundamentalMat(left_pts,right_pts,cv2.RANSAC,9)
 matchesMask = mask.ravel().tolist()
 # Random Sampling 10 points
 rand10matchesMask = []
@@ -55,7 +55,7 @@ inlier_idx = []
 for i in range(0,len(matchesMask)):
     if(matchesMask[i] == 1):
         inlier_idx.append(i)
-rand10Places = np.random.choice(inlier_idx,10,replace=False)
+rand10Places = np.random.choice(inlier_idx,10+1,replace=False)
 for i in range(0,len(matchesMask)):
     if((i == rand10Places).any()):
         rand10matchesMask.append(1)

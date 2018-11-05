@@ -48,8 +48,8 @@ cv2.imwrite('1/task1_matches_knn.jpg',img3)
 ratioTestM = np.array(ratioTestM)
 src_pts = np.float32([keypoints_img1knn[m.queryIdx].pt for m in ratioTestM.flatten()])
 dst_pts = np.float32([keypoints_img2knn[m.trainIdx].pt for m in ratioTestM.flatten()])
-
-H, mask = cv2.findHomography(src_pts,dst_pts, cv2.RANSAC,1)
+# ,maxIters=50
+H, mask = cv2.findHomography(src_pts,dst_pts, cv2.RANSAC,1,maxIters=2000000000)
 matchesMask = mask.ravel().tolist()
 
 # Random Sampling 10 points
@@ -77,16 +77,21 @@ cv2.imwrite('1/task1_matches.jpg',img4)
 # https://stackoverflow.com/questions/22220253/cvwarpperspective-only-shows-part-of-warped-image
 # Therefore finding real corners after warping
 h,w = np.shape(img1_g)
-P = [[0,w,w,0],
-     [0,0,h,h],
-     [1,1,1,1]]
-P = np.matmul(H,P)
-P[0] = np.divide(P[0],P[2])
-P[1] = np.divide(P[1],P[2])
-M2 = H.copy()
-M2[0][2] = H[0][2] - min(P[0])
-M2[1][2] = H[1][2] - min(P[1])
-warpImg = cv2.warpPerspective(img1_g.copy(),H,(w*2,h*2))
-# test[h:h*2,w:w*2]=img2_g.copy()
+corners = np.array([
+  [0,0],
+  [0,h-1],
+  [w-1,h-1],
+  [w-1,0]
+])
+corners = cv2.perspectiveTransform(np.float32([corners]),H)[0]
+bx, by, bwidth, bheight = cv2.boundingRect(corners)
+translation = np.array([
+  [1,0,-bx],
+  [0,1,-by],
+  [0,0,1]
+])
+H2 = np.dot(translation,H)
+warpImg = cv2.warpPerspective(img1_g.copy(),H2,((w*2),bheight+15))
+warpImg[bheight-h+15:bheight-h+15+h,w:]=img2_g.copy()
 #warpImg[0:h,0:w]=img2_g.copy()
 cv2.imwrite("1/task1_pano.jpg", warpImg)
