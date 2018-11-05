@@ -150,10 +150,99 @@ def quantaRaster(raster,point_centroid_dict,centroids):
         resultImage.append(holdRow)
     return resultImage
 
-'''def phiMat(data,mean,covar):
-    left = 1/np.multiply(2pi,abs(covar))
-    left = np.sqrt(left)
-    xmu = x-mu
-    right=0.5*np.transpose(xmu)*np.linalg.pinv(covar)*xmu
-'''
+def eta(data,mu,covar):
+    import numpy as np
+    left_deno_left = np.sqrt(2*(np.pi))
+    left_deno_right = np.sqrt(np.abs(covar))
+    left_deno = np.multiply(left_deno_left,left_deno_right)
+    left = np.linalg.inv(left_deno)
+    designMatrix = np.zeros((len(data),len(mu)))
+    for j,point in enumerate(data):
+        point = np.transpose(point)
+        for i,centroid in enumerate(mu):
+            centroid = np.transpose(centroid)
+            left = np.subtract(point,centroid)
+            left_transpose = np.transpose(left)
+            left_transpose = np.dot(left_transpose,np.linalg.inv(covar))
+            right = np.dot(left_transpose,left)
+            val = np.exp(-0.5*right)
+            designMatrix[j][i] = val
+    return designMatrix
+
+
+def gamma(designMat,piMat,nval,kval):
+    import numpy as np
+    top = piMat[kval]*designMat[nval][kval]
+    holdDeno = 0
+    for j,pi in enumerate(piMat):
+        holdDeno += pi * designMat[nval][j]
+    return np.divide(top,holdDeno)
+
+def EStep(designMat,pi):
+    import numpy as np
+    holdLeft = 0
+    holdRight = 0
+    for k,_ in enumerate(mu):
+        for i,_ in enumerate(X):
+            gammaVal = gamma(designMat,pi,i,k)
+            left = gammaVal * np.log(pi)
+            right = gammaVal * np.log(designMat[i][l])
+            holdLeft += left
+            holdRight += right
+    Q = holdLeft + holdRight
+    return Q
+
+def updateMu(data,designMat,mu,piMat):
+    import numpy as np
+    Nk = []
+    for k,_ in enumerate(mu):
+        holdval = 0
+        for n,_ in enumerate(designMat):
+            holdval+=gamma(designMat,piMat,n,kval=k)
+        Nk.append(holdval)
+        
+    newMu = mu.copy()
+    for k,mu in enumerate(newMu):
+        gammaVal = np.zeros(np.shape(newMu[k]))
+        for n,point in enumerate(data):
+            temp = np.dot(gamma(designMat,piMat,n,k),point)
+            gammaVal = np.add(gammaVal,temp)
+        newMu[k] = np.divide(gammaVal,Nk[k])
+    return newMu
+
+def MStep():
+
+            
+    piMat = []
+    for l,_ in enumerate(mu):
+        left = 0
+        for i,_ in enumerate(designMat):
+            left += gamma(designMat,pi,i,l)
+        piMat.append(((1/N)*left))
+        
+    newMu = []
+    for l,_ in enumerate(mu):
+        holdMuRight = 0
+        holdDeno = 0
+        for i,_ in enumerate(data):
+            holdMuRight += np.multiply(data[i],gamma(designMat,pi,i,l))
+            holdDeno += gamma(designMat,pi,i,l)
+        val = np.divide(holdMuRight,holdDeno)
+        newMu.append(val)
+    
+    newCovar = []
+    for l,centroid in enumerate(mu):
+        holdCovar = []
+        top = np.zeros((1,1))
+        bottom = 0
+        for i,_ in enumerate(data):
+            gammaVal = gamma(designMat,pi,i,l)
+            right = np.square(data[i] - centroid)
+            temp = np.multiply(gammaVal,right)
+            top = top + temp
+            bottom += gammaVal
+        holdCovar=np.divide(top,gammaVal)
+        newCovar.append(holdCovar)
+    
+    return piMat,newMu,newCovar
             

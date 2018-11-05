@@ -75,17 +75,16 @@ centroids = np.array(centroids,dtype="float64")
 
 old_centroid = np.zeros((np.shape(centroids)))
 iteration=1
-while(not(np.allclose(old_centroid,centroids,rtol=0.001))):
+while(not(np.allclose(old_centroid,centroids,rtol=0.001)) and iteration < 40):
     print(iteration)
     point_centroid_dict = {}
     point_centroid_dict = kmeans3d(resultImage,centroids,point_centroid_dict)
     cold_centroid = centroids
     centroids = updateCentroids3d(resultImage,centroids.copy(),point_centroid_dict)
     iteration+=1
-
-img2 = quantaRaster(resultImage,point_centroid_dict,centroids)
-display = np.asarray(img2,dtype='float32')
-cv2.imwrite('3/task3_baboon_3.jpg',display)
+    img2 = quantaRaster(resultImage,point_centroid_dict,centroids)
+    display = np.asarray(img2,dtype='float32')
+    cv2.imwrite('3/task3_baboon_3.jpg',display)
 
 # k = 5
 img = cv2.imread("./data/baboon.jpg")
@@ -104,7 +103,7 @@ for i in range(k)]
 centroids = np.array(centroids,dtype="float64")
 old_centroid = np.zeros((np.shape(centroids)))
 iteration=1
-while(not (np.allclose(old_centroid,centroids))):
+while(not (np.allclose(old_centroid,centroids)) and iteration < 40):
     print(iteration)
     point_centroid_dict = {}
     point_centroid_dict = kmeans3d(resultImage,centroids,point_centroid_dict)
@@ -133,7 +132,7 @@ for i in range(k)]
 centroids = np.array(centroids,dtype="float64")
 old_centroid = np.zeros((np.shape(centroids)))
 iteration=1
-while(not (np.allclose(old_centroid,centroids))):
+while(not (np.allclose(old_centroid,centroids)) and iteration < 40):
     print(iteration)
     point_centroid_dict = {}
     point_centroid_dict = kmeans3d(resultImage,centroids,point_centroid_dict)
@@ -156,13 +155,13 @@ for h in range(0,np.shape(img)[0]):
         holdRow.append([r[h][w],g[h][w],b[h][w]])
     resultImage.append(holdRow)
 resultImage = np.array(resultImage,dtype="float32")
-k= 10
+k= 20
 centroids=[[np.random.randint(0,255), np.random.randint(0, 255),np.random.randint(0, 255)]
 for i in range(k)]
 centroids = np.array(centroids,dtype="float64")
 old_centroid = np.zeros((np.shape(centroids)))
 iteration=1
-while(not (np.allclose(old_centroid,centroids))):
+while(not (np.allclose(old_centroid,centroids)) and iteration < 40):
     print(iteration)
     point_centroid_dict_old = point_centroid_dict.copy()
     point_centroid_dict = {}
@@ -170,9 +169,8 @@ while(not (np.allclose(old_centroid,centroids))):
     old_centroid = centroids
     centroids = updateCentroids3d(resultImage,centroids.copy(),point_centroid_dict)
     iteration+=1
-
-img2 = quantaRaster(resultImage,point_centroid_dict,centroids)
-display = np.asarray(img2,dtype='uint8')
-cv2.imwrite('3/task3_baboon_20.jpg',display)
+    img2 = quantaRaster(resultImage,point_centroid_dict,centroids)
+    display = np.asarray(img2,dtype='uint8')
+    cv2.imwrite('3/task3_baboon_20.jpg',display)
 
     
